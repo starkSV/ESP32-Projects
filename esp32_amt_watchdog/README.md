@@ -125,7 +125,6 @@ The on-board LED blinks slowly while paused and quickly while latched.
 esp32_amt_watchdog/
   esp32_amt_watchdog.ino   the sketch
   secrets.example.h        copy to secrets.h and fill in
-examples/
   get-power-state.xml      read-only AMT request for testing
 ```
 
