@@ -24,7 +24,7 @@
 #include "secrets.h"
 
 #ifndef DRY_RUN
-#define DRY_RUN 0
+#define DRY_RUN 1
 #endif
 
 // 1 = pretend the SSH/DNS probes fail, so the whole decision path (including a real, read-only AMT
@@ -368,9 +368,10 @@ void loop() {
   if (ssh && dns) {                                       // healthy
     if (inRecovery) {
       queueNote(String("Server recovered ") + String((now - actedAt) / 1000) + " s after the reset.");
-      inRecovery = false; failedRecoveries = 0;
-      if (latched) { latched = false; prefs.putBool("latched", false); }
+      inRecovery = false;
     }
+    failedRecoveries = 0;                                 // healthy again: forget earlier failures
+    if (latched) { latched = false; prefs.putBool("latched", false); }
     deadSince = 0; degradedPolls = 0;
     flushNotes();
     return;
