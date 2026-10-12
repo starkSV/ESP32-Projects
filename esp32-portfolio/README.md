@@ -91,7 +91,7 @@ Edit `secrets.h` with your Wi-Fi credentials:
 | `/projects` | `GET` | Complete project index |
 | `/projects/<slug>` | `GET` | 7 in-depth project case studies (`fps-calculator`, `msdl`, `pixlyzer`, `bottleneck-calculator`, `minxlink`, `skysift`, `win-perf-mon`) |
 | `/blog` | `GET` | Writing and technical articles directory |
-| `/stats` | `GET` | Live JSON telemetry (`uptime_s`, `free_heap`, `min_free_heap_ever`, `rssi`, `hits_static`, `hits_ping`) |
+| `/stats` | `GET` | Live JSON telemetry (`uptime_s`, `free_heap`, `min_free_heap`, `min_free_heap_ever`, `rssi`, `hits_static`, `hits_ping`, `hits_stats`, `not_found`) |
 | `/ping` | `GET` | Raw network speed test (`pong`) |
 | `/robots.txt` | `GET` | Crawler policy |
 | `/*` (Fallback) | `GET` | Custom gzip-compressed 404 page |
@@ -113,9 +113,14 @@ python loadtest.py http://<ESP32_IP>/ --levels 1,5,10,25,50,100 --duration 15 --
 
 # Connection stress test without HTTP keep-alive
 python loadtest.py http://<ESP32_IP>/ --no-keepalive --label nokeepalive
+
+# Test the board itself behind a caching proxy or CDN (unique ?b= query on every request)
+python loadtest.py https://your-domain.example/ --levels 1,5,10,25 --bust --label bust
 ```
 
-Reports request rate (`rps`), latency percentiles (`p50`, `p90`, `p95`, `p99`), error details, and ESP32 heap memory before and after each tier to a timestamped CSV.
+For each concurrency level it prints requests per second, p50/p95/p99/max latency, successful and failed request counts, and the board's lowest-ever free heap (read from `/stats`). Everything, plus mean latency, throughput and heap before and after each level, is saved to `results_<label>.csv`.
+
+`--bust` matters when something caches in front of the board (a reverse proxy or CDN). Without it, repeated requests for the same URL can be answered by the cache and never reach the ESP32, so the numbers describe the cache, not the board.
 
 ---
 

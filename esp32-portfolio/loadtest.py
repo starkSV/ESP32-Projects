@@ -14,7 +14,9 @@ Usage:
 import argparse
 import asyncio
 import csv
+import itertools
 import json
+import random
 import statistics
 import time
 from urllib.parse import urlparse
@@ -37,11 +39,16 @@ async def fetch_stats(session, base):
         return None
 
 
+BUST = False  # set by --bust: unique query string per request, so caches can't answer
+_seq = itertools.count()
+
+
 async def worker(session, url, deadline, lat, errs, bytes_box):
     while time.perf_counter() < deadline:
         t0 = time.perf_counter()
         try:
-            async with session.get(url) as r:
+            u = f"{url}{'&' if '?' in url else '?'}b={next(_seq)}-{random.getrandbits(32):x}" if BUST else url
+            async with session.get(u) as r:
                 body = await r.read()
                 if r.status != 200:
                     errs["http_" + str(r.status)] = errs.get("http_" + str(r.status), 0) + 1
@@ -99,6 +106,7 @@ def print_row(r):
 
 
 async def main():
+    global BUST
     ap = argparse.ArgumentParser()
     ap.add_argument("url", help="full URL to hit, e.g. http://192.168.1.50/")
     ap.add_argument("--levels", default="1,5,10,25,50,100")
@@ -106,9 +114,11 @@ async def main():
     ap.add_argument("--timeout", type=float, default=10, help="per-request timeout, seconds")
     ap.add_argument("--cooldown", type=float, default=5, help="pause between levels, seconds")
     ap.add_argument("--no-keepalive", action="store_true", help="new TCP connection per request")
+    ap.add_argument("--bust", action="store_true", help="add a unique ?b= query to every request to bypass NPM/CDN caches (tests the board itself)")
     ap.add_argument("--label", default="run")
     ap.add_argument("--out", default=None, help="CSV output path (default: results_<label>.csv)")
     args = ap.parse_args()
+    BUST = args.bust
 
     p = urlparse(args.url)
     base = f"{p.scheme}://{p.netloc}"

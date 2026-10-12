@@ -67,7 +67,7 @@ Uses LittleFS to separate firmware code from static web assets.
 | Route | Content Type | Description |
 |---|---|---|
 | `/` | `text/html` | Main status dashboard (cached for 60s) |
-| `/stats` | `application/json` | Telemetry: `uptime_s`, `free_heap`, `min_free_heap_ever`, `rssi`, `hits_static`, `hits_ping` |
+| `/stats` | `application/json` | Telemetry: `uptime_s`, `free_heap`, `min_free_heap`, `min_free_heap_ever`, `rssi`, `hits_static`, `hits_ping`, `hits_stats`, `not_found` |
 | `/ping` | `text/plain` | Returns `pong` (for benchmarking raw network/TCP overhead without filesystem/HTML parsing) |
 
 ---
@@ -88,6 +88,11 @@ python loadtest.py http://<ESP32_IP>/ --levels 1,5,10,25,50,100 --duration 15 --
 
 # Benchmark worst-case scenario without TCP keep-alive
 python loadtest.py http://<ESP32_IP>/ --no-keepalive --label nokeepalive
+
+# Test the board itself behind a caching proxy or CDN (unique ?b= query on every request)
+python loadtest.py https://your-domain.example/ --levels 1,5,10,25 --bust --label bust
 ```
 
-Results are saved to a CSV file timestamped with latency percentiles (`p50`, `p90`, `p95`, `p99`), requests/sec (`rps`), HTTP error counts, and heap usage before and after each concurrency tier.
+For each concurrency level it prints requests per second, p50/p95/p99/max latency, successful and failed request counts, and the board's lowest-ever free heap (read from `/stats`). Everything, plus mean latency, throughput and heap before and after each level, is saved to `results_<label>.csv`.
+
+`--bust` matters when something caches in front of the board (a reverse proxy or CDN). Without it, repeated requests for the same URL can be answered by the cache and never reach the ESP32, so the numbers describe the cache, not the board.
