@@ -1,0 +1,23 @@
+# Secrets
+secrets.h
+*.secrets.h
+!secrets.example.h
+
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Python
+__pycache__/
+*.py[cod]
+dist/
+
+# Arduino / Editor
+.vscode/
+*.bin
+*.elf
+
+# OS files
+.DS_Store
+Thumbs.db

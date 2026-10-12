@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Served by a $5 ESP32</title>
+<style>
+  :root { color-scheme: light dark; --bg:#0f1115; --fg:#e8e8ea; --mut:#8b8f98; --acc:#4ade80; --card:#181b21; }
+  @media (prefers-color-scheme: light) { :root { --bg:#fafafa; --fg:#15171a; --mut:#666; --acc:#16a34a; --card:#fff; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui,sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:48px 20px; }
+  h1 { font-size:1.9rem; margin:0 0 8px; }
+  p { color:var(--mut); margin:0 0 24px; }
+  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .card { background:var(--card); border:1px solid #2a2e36; border-radius:10px; padding:14px 16px; }
+  .card b { display:block; font-size:1.4rem; color:var(--acc); font-variant-numeric:tabular-nums; }
+  .card span { color:var(--mut); font-size:.85rem; }
+  footer { margin-top:32px; color:var(--mut); font-size:.85rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>This page lives on a $5 ESP32</h1>
+  <p>No VPS, no CDN origin. A 240 MHz dual-core chip with about 320 KB of usable RAM is answering this request.</p>
+  <div class="grid">
+    <div class="card"><b id="up">-</b><span>uptime</span></div>
+    <div class="card"><b id="heap">-</b><span>free heap (KB)</span></div>
+    <div class="card"><b id="min">-</b><span>lowest free heap (KB)</span></div>
+    <div class="card"><b id="hits">-</b><span>page hits served</span></div>
+  </div>
+  <footer>Stats refresh every 2 seconds from <code>/stats</code>.</footer>
+</main>
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = s => s > 3600 ? (s/3600).toFixed(1)+' h' : s > 60 ? Math.floor(s/60)+' min' : s+' s';
+  async function tick() {
+    try {
+      const s = await (await fetch('/stats', {cache:'no-store'})).json();
+      $('up').textContent = fmt(s.uptime_s);
+      $('heap').textContent = (s.free_heap/1024).toFixed(0);
+      $('min').textContent = (s.min_free_heap_ever/1024).toFixed(0);
+      $('hits').textContent = s.hits_static.toLocaleString();
+    } catch (e) {}
+  }
+  tick(); setInterval(tick, 2000);
+</script>
+</body>
+</html>
